@@ -1,43 +1,35 @@
-name: "Terraform Supabase Pipeline"
+terraform {
+  required_version = ">= 1.10.0"
+}
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+# Example using a local file resource to trigger a local shell command
+resource "local_file" "foo" {
+  content  = "Hello, Terraform Local Exec!"
+  filename = "${path.module}/foo.txt"
 
-jobs:
-  terraform:
-    name: "Supabase Deployment"
-    runs-on: ubuntu-latest
+  # Executes a command on the machine running Terraform after creation
+  provisioner "local-exec" {
+    command = "echo 'Created file with content: ${self.content}'"
+  }
 
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+  # Executes a command on the machine running Terraform before destruction
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'About to delete file: ${self.filename}'"
+  }
+}
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+# Example using terraform_data (recommended modern approach over null_resource)
+resource "terraform_data" "run_script" {
+  triggers_replace = [
+    local_file.foo.id
+  ]
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      #- name: Link Existing Supabase Project
-        #run: supabase link --project-ref $SUPABASE_PROJECT_ID
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.10.0"
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: terraform plan -input=false
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+  provisioner "local-exec" {
+    command     = "echo 'Triggered script execution locally!'"
+    working_dir = path.module
+    environment = {
+      FILE_PATH = local_file.foo.filename
+    }
+  }
+}
