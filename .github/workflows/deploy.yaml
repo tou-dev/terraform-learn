@@ -19,7 +19,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
+      - name: Setup Supabase CLICLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
