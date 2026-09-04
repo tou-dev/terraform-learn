@@ -5,7 +5,7 @@ terraform {
 # Example using a local file resource to trigger a local shell command
 resource "local_file" "foo" {
   content  = "Hello, Terraform Local Exec!"
-  filename = "${path.module}/foo.txt"
+  filename = "${path.module}/file.txt"
 
   # Executes a command on the machine running Terraform after creation
   provisioner "local-exec" {
