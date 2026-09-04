@@ -37,6 +37,7 @@ jobs:
           terraform_version: "1.10.0"
       - name: Terraform Init
         env:
+        https://jyeafmtpzytusoiispsg.storage.supabase.co/storage/v1/s3
           AWS_ENDPOINT_URL_S3: https://${{ secrets.SUPABASE_PROJECT_ID }}.storage.supabase.co/storage/v1/s3
         run: |
           terraform init \
