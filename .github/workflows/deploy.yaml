@@ -33,7 +33,10 @@ jobs:
           terraform_version: "1.10.0"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.SUPABASE_BUCKET_NAME }}" \
+            -backend-config="endpoint=https://${{ secrets.SUPABASE_PROJECT_ID }}.storage.supabase.co/storage/v1/s3"
 
       - name: Terraform Plan
         run: terraform plan -input=false
