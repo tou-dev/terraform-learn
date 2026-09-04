@@ -1,62 +1,32 @@
-name: "Terraform Supabase Pipeline"
+name: Terraform
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   terraform:
-    name: "Supabase Deployment"
     runs-on: ubuntu-latest
 
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Supabase CLICLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
-
-      - name: Link Existing Supabase Project
-        run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.10.0"
+
       - name: Terraform Init
-        env:
-          AWS_ENDPOINT_URL_S3: https://${{ secrets.SUPABASE_PROJECT_ID }}.storage.supabase.co/storage/v1/s3
-        run: |
-          terraform init \
-            -backend-config="bucket=${{ secrets.SUPABASE_BUCKET_NAME }}" \
-            -backend-config="key=terraform.tfstate" \
-            -backend-config="region=eu-central-1" \
-            -backend-config="access_key=${{ secrets.SUPABASE_S3_ACCESS_KEY_ID }}" \
-            -backend-config="secret_key=${{ secrets.SUPABASE_S3_SECRET_ACCESS_KEY }}"
-        
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false
-
-      - name: Commit and Push Generated File
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add foo.txt
-          git commit -m "chore: auto-generate foo.txt via Terraform [skip ci]" || echo "No changes to commit"
-          git push
+        run: terraform plan
